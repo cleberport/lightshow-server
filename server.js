@@ -3,15 +3,18 @@ import http from "http";
 import { Server } from "socket.io";
 import cors from "cors";
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 10000;
 const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || "*";
-const CONTROLLER_KEY = process.env.CONTROLLER_KEY || "";
+const CONTROLLER_KEY = process.env.CONTROLLER_KEY || "play123";
 
 const app = express();
-app.use(cors({ origin: ALLOWED_ORIGIN === "*" ? true : [ALLOWED_ORIGIN], credentials: true }));
+app.use(cors({
+  origin: ALLOWED_ORIGIN === "*" ? true : [ALLOWED_ORIGIN],
+  credentials: true
+}));
 
 app.get("/", (_req, res) => {
-  res.send("LightShow WebSocket server is running.");
+  res.send("✅ LightShow WebSocket server is running.");
 });
 
 const server = http.createServer(app);
@@ -30,7 +33,10 @@ let currentState = {
 };
 
 io.on("connection", (socket) => {
+  console.log("Nova conexão:", socket.id);
+
   socket.on("join", (role) => {
+    console.log("Entrou como:", role);
     if (role === "audience") {
       socket.join("audience");
       socket.emit("state", currentState);
@@ -43,6 +49,7 @@ io.on("connection", (socket) => {
   socket.on("setState", (payload) => {
     const { key, state } = payload || {};
     if (CONTROLLER_KEY && key !== CONTROLLER_KEY) {
+      console.log("Chave incorreta");
       return;
     }
     if (!state) return;
@@ -69,8 +76,12 @@ io.on("connection", (socket) => {
       io.to("audience").emit("state", currentState);
     }
   });
+
+  socket.on("disconnect", () => {
+    console.log("Cliente desconectado:", socket.id);
+  });
 });
 
 server.listen(PORT, () => {
-  console.log(`Server listening on port ${PORT}`);
+  console.log(`🚀 Servidor LightShow ativo na porta ${PORT}`);
 });
